@@ -8,19 +8,237 @@ import plotly.graph_objects as go
 # CARGA DE DATOS
 # ═══════════════════════════════════════════════════════════════════════════════
 df = pd.read_csv("panel_2020_paises_sin_nan_R_clean.csv")
-df['fecha'] = pd.to_datetime(df['fecha'])
+df["fecha"] = pd.to_datetime(df["fecha"])
 
-numeric_cols = ['confirmados', 'muertes', 'IA_100k', 'tasa_mortalidad_por_millon', 
-                'letalidad_CFR_pct', 'confirmados_dia', 'muertes_dia', 
-                'pib_per_capita_2019', 'gasto_salud_pib', 'poblacion']
+# Mapeo de países a continentes para el Motion Chart
+CONTINENT_MAP = {
+    # Europa
+    "ESP": "Europa",
+    "FRA": "Europa",
+    "DEU": "Europa",
+    "ITA": "Europa",
+    "GBR": "Europa",
+    "PRT": "Europa",
+    "NLD": "Europa",
+    "BEL": "Europa",
+    "AUT": "Europa",
+    "CHE": "Europa",
+    "POL": "Europa",
+    "CZE": "Europa",
+    "ROU": "Europa",
+    "HUN": "Europa",
+    "BGR": "Europa",
+    "GRC": "Europa",
+    "SWE": "Europa",
+    "NOR": "Europa",
+    "DNK": "Europa",
+    "FIN": "Europa",
+    "IRL": "Europa",
+    "SVK": "Europa",
+    "HRV": "Europa",
+    "SVN": "Europa",
+    "LTU": "Europa",
+    "LVA": "Europa",
+    "EST": "Europa",
+    "CYP": "Europa",
+    "LUX": "Europa",
+    "MLT": "Europa",
+    "ISL": "Europa",
+    "SRB": "Europa",
+    "BIH": "Europa",
+    "ALB": "Europa",
+    "MKD": "Europa",
+    "MNE": "Europa",
+    "UKR": "Europa",
+    "BLR": "Europa",
+    "MDA": "Europa",
+    "RUS": "Europa",
+    # Asia
+    "CHN": "Asia",
+    "JPN": "Asia",
+    "KOR": "Asia",
+    "IND": "Asia",
+    "IDN": "Asia",
+    "THA": "Asia",
+    "VNM": "Asia",
+    "MYS": "Asia",
+    "SGP": "Asia",
+    "PHL": "Asia",
+    "PAK": "Asia",
+    "BGD": "Asia",
+    "IRN": "Asia",
+    "IRQ": "Asia",
+    "SAU": "Asia",
+    "ARE": "Asia",
+    "ISR": "Asia",
+    "TUR": "Asia",
+    "KAZ": "Asia",
+    "UZB": "Asia",
+    "AFG": "Asia",
+    "NPL": "Asia",
+    "LKA": "Asia",
+    "MMR": "Asia",
+    "KHM": "Asia",
+    "LAO": "Asia",
+    "TWN": "Asia",
+    "HKG": "Asia",
+    "MAC": "Asia",
+    "MNG": "Asia",
+    "KWT": "Asia",
+    "QAT": "Asia",
+    "BHR": "Asia",
+    "OMN": "Asia",
+    "JOR": "Asia",
+    "LBN": "Asia",
+    "SYR": "Asia",
+    "YEM": "Asia",
+    "ARM": "Asia",
+    "AZE": "Asia",
+    "GEO": "Asia",
+    "TJK": "Asia",
+    "TKM": "Asia",
+    "KGZ": "Asia",
+    "PRK": "Asia",
+    # América del Norte
+    "USA": "América del Norte",
+    "CAN": "América del Norte",
+    "MEX": "América del Norte",
+    # América Central y Caribe
+    "GTM": "América Central",
+    "HND": "América Central",
+    "SLV": "América Central",
+    "NIC": "América Central",
+    "CRI": "América Central",
+    "PAN": "América Central",
+    "BLZ": "América Central",
+    "CUB": "América Central",
+    "DOM": "América Central",
+    "HTI": "América Central",
+    "JAM": "América Central",
+    "TTO": "América Central",
+    "BHS": "América Central",
+    "BRB": "América Central",
+    "PRI": "América Central",
+    # América del Sur
+    "BRA": "América del Sur",
+    "ARG": "América del Sur",
+    "COL": "América del Sur",
+    "PER": "América del Sur",
+    "VEN": "América del Sur",
+    "CHL": "América del Sur",
+    "ECU": "América del Sur",
+    "BOL": "América del Sur",
+    "PRY": "América del Sur",
+    "URY": "América del Sur",
+    "GUY": "América del Sur",
+    "SUR": "América del Sur",
+    # África
+    "ZAF": "África",
+    "EGY": "África",
+    "NGA": "África",
+    "KEN": "África",
+    "ETH": "África",
+    "GHA": "África",
+    "TZA": "África",
+    "UGA": "África",
+    "DZA": "África",
+    "MAR": "África",
+    "TUN": "África",
+    "LBY": "África",
+    "SDN": "África",
+    "AGO": "África",
+    "MOZ": "África",
+    "ZMB": "África",
+    "ZWE": "África",
+    "BWA": "África",
+    "NAM": "África",
+    "SEN": "África",
+    "CIV": "África",
+    "CMR": "África",
+    "COD": "África",
+    "COG": "África",
+    "GAB": "África",
+    "RWA": "África",
+    "MUS": "África",
+    "MDG": "África",
+    "MWI": "África",
+    "MLI": "África",
+    "BFA": "África",
+    "NER": "África",
+    "TCD": "África",
+    "CAF": "África",
+    "SSD": "África",
+    "SOM": "África",
+    "ERI": "África",
+    "DJI": "África",
+    "GMB": "África",
+    "GNB": "África",
+    "GIN": "África",
+    "SLE": "África",
+    "LBR": "África",
+    "TGO": "África",
+    "BEN": "África",
+    "MRT": "África",
+    "CPV": "África",
+    "STP": "África",
+    "GNQ": "África",
+    "SWZ": "África",
+    "LSO": "África",
+    "COM": "África",
+    "SYC": "África",
+    # Oceanía
+    "AUS": "Oceanía",
+    "NZL": "Oceanía",
+    "PNG": "Oceanía",
+    "FJI": "Oceanía",
+    "SLB": "Oceanía",
+    "VUT": "Oceanía",
+    "NCL": "Oceanía",
+    "PYF": "Oceanía",
+    "WSM": "Oceanía",
+    "TON": "Oceanía",
+    "KIR": "Oceanía",
+    "FSM": "Oceanía",
+    "PLW": "Oceanía",
+    "MHL": "Oceanía",
+    "NRU": "Oceanía",
+    "TUV": "Oceanía",
+}
+
+# Colores por continente para el Motion Chart
+CONTINENT_COLORS = {
+    "Europa": "#6366f1",
+    "Asia": "#f59e0b",
+    "América del Norte": "#10b981",
+    "América del Sur": "#8b5cf6",
+    "América Central": "#14b8a6",
+    "África": "#ef4444",
+    "Oceanía": "#ec4899",
+    "Otros": "#64748b",
+}
+
+df["continente"] = df["iso3c"].map(CONTINENT_MAP).fillna("Otros")
+
+numeric_cols = [
+    "confirmados",
+    "muertes",
+    "IA_100k",
+    "tasa_mortalidad_100k",
+    "letalidad_CFR_pct",
+    "confirmados_dia",
+    "muertes_dia",
+    "pib_per_capita_2019",
+    "gasto_salud_pib",
+    "poblacion",
+]
 for col in numeric_cols:
     if col in df.columns:
-        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-df_ultimo = df.loc[df.groupby('pais')['fecha'].idxmax()]
-paises = sorted(df['pais'].dropna().unique().tolist())
-fecha_min = df['fecha'].min()
-fecha_max = df['fecha'].max()
+df_ultimo = df.loc[df.groupby("pais")["fecha"].idxmax()]
+paises = sorted(df["pais"].dropna().unique().tolist())
+fecha_min = df["fecha"].min()
+fecha_max = df["fecha"].max()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CSS PROFESIONAL CON HERO Y NAVEGACIÓN
@@ -201,21 +419,19 @@ document.addEventListener('DOMContentLoaded', function() {
 # ═══════════════════════════════════════════════════════════════════════════════
 app_ui = ui.page_fluid(
     ui.HTML(css),
-    
     # NAV LATERAL
     ui.HTML("""
     <div class="nav-menu">
         <div class="nav-dot active" data-section="hero" data-tooltip="Inicio"></div>
         <div class="nav-dot" data-section="dashboard" data-tooltip="Dashboard"></div>
-        <div class="nav-dot" data-section="temporal" data-tooltip="Temporal"></div>
-        <div class="nav-dot" data-section="mapa" data-tooltip="Mapa"></div>
-        <div class="nav-dot" data-section="salud" data-tooltip="Salud"></div>
-        <div class="nav-dot" data-section="ranking" data-tooltip="Ranking"></div>
-        <div class="nav-dot" data-section="pib" data-tooltip="PIB"></div>
-        <div class="nav-dot" data-section="diarios" data-tooltip="Diarios"></div>
+        <div class="nav-dot" data-section="motion" data-tooltip="Motion Chart"></div>
+        <div class="nav-dot" data-section="ridgeline" data-tooltip="Las Olas"></div>
+        <div class="nav-dot" data-section="dumbbell" data-tooltip="Dumbbell"></div>
+        <div class="nav-dot" data-section="heatmap" data-tooltip="Calendario"></div>
+        <div class="nav-dot" data-section="efficiency" data-tooltip="Eficiencia"></div>
+        <div class="nav-dot" data-section="mapa" data-tooltip="Mapa Global"></div>
     </div>
     """),
-    
     # ═══════════════════════════════════════════════════════════════════════════
     # HERO LANDING PAGE
     # ═══════════════════════════════════════════════════════════════════════════
@@ -262,13 +478,14 @@ app_ui = ui.page_fluid(
             """),
             # KPIs pequeños en el hero
             ui.output_ui("hero_kpis"),
-            class_="hero-section"
+            class_="hero-section",
         ),
-        ui.HTML('<div class="scroll-indicator" onclick="document.getElementById(\'dashboard\').scrollIntoView({behavior: \'smooth\'})"><div class="scroll-arrow"></div></div>'),
+        ui.HTML(
+            '<div class="scroll-indicator" onclick="document.getElementById(\'dashboard\').scrollIntoView({behavior: \'smooth\'})"><div class="scroll-arrow"></div></div>'
+        ),
         class_="hero-landing",
-        id="hero"
+        id="hero",
     ),
-    
     # ═══════════════════════════════════════════════════════════════════════════
     # DASHBOARD SECTION
     # ═══════════════════════════════════════════════════════════════════════════
@@ -276,157 +493,236 @@ app_ui = ui.page_fluid(
         # Filtros
         ui.div(
             ui.div(
-                ui.HTML('<div class="filter-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;vertical-align:middle;margin-right:8px"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>Filtros de Visualización</div>'),
-                class_="filter-header"
+                ui.HTML(
+                    '<div class="filter-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;vertical-align:middle;margin-right:8px"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>Filtros de Visualización</div>'
+                ),
+                class_="filter-header",
             ),
             ui.row(
-                ui.column(4, ui.input_selectize("pais", "País:", choices=["Todos"] + paises, selected="Todos")),
-                ui.column(4, ui.input_date("fecha_inicio", "Fecha inicio:", value=fecha_min, min=fecha_min, max=fecha_max)),
-                ui.column(4, ui.input_date("fecha_fin", "Fecha fin:", value=fecha_max, min=fecha_min, max=fecha_max))
+                ui.column(
+                    4,
+                    ui.input_selectize(
+                        "pais", "País:", choices=["Todos"] + paises, selected="Todos"
+                    ),
+                ),
+                ui.column(
+                    4,
+                    ui.input_date(
+                        "fecha_inicio",
+                        "Fecha inicio:",
+                        value=fecha_min,
+                        min=fecha_min,
+                        max=fecha_max,
+                    ),
+                ),
+                ui.column(
+                    4,
+                    ui.input_date(
+                        "fecha_fin",
+                        "Fecha fin:",
+                        value=fecha_max,
+                        min=fecha_min,
+                        max=fecha_max,
+                    ),
+                ),
             ),
-            class_="filter-panel"
+            class_="filter-panel",
         ),
-        
         # KPIs Dashboard (grandes, con animación)
         ui.output_ui("dashboard_kpis"),
-        
-        # Gráfico 1: Temporal
+        # Gráfico 1: Motion Chart (Animated Bubble Chart)
         ui.div(
             ui.div(
                 ui.span("01", class_="section-number"),
                 ui.div(
-                    ui.div("Evolución Temporal", class_="section-title"),
-                    ui.div("Evolución de casos confirmados a lo largo del tiempo", class_="section-subtitle"),
+                    ui.div("Motion Chart: PIB vs Mortalidad", class_="section-title"),
+                    ui.div(
+                        "Evolución temporal de la correlación entre riqueza económica e impacto del virus - Data Storytelling animado",
+                        class_="section-subtitle",
+                    ),
                 ),
-                class_="section-header"
+                class_="section-header",
             ),
-            output_widget("chart_temporal"),
+            output_widget("chart_motion"),
             class_="chart-section",
-            id="temporal"
+            id="motion",
         ),
-        
-        # Gráfico 2: Mapa
+        # Gráfico 2: Ridgeline Plot ("Las Olas")
         ui.div(
             ui.div(
                 ui.span("02", class_="section-number"),
                 ui.div(
-                    ui.div("Mapa Global de Incidencia", class_="section-title"),
-                    ui.div("Distribución geográfica de casos por 100.000 habitantes", class_="section-subtitle"),
+                    ui.div("Las Olas: Ridgeline Plot", class_="section-title"),
+                    ui.div(
+                        "Comparación de olas de contagio entre diferentes países - Densidad de casos diarios",
+                        class_="section-subtitle",
+                    ),
                 ),
-                class_="section-header"
+                class_="section-header",
             ),
-            output_widget("chart_mapa"),
+            ui.row(
+                ui.column(
+                    12,
+                    ui.input_selectize(
+                        "paises_ridgeline",
+                        "Seleccionar países para comparar:",
+                        choices=paises,
+                        selected=[
+                            "Spain",
+                            "Italy",
+                            "Germany",
+                            "France",
+                            "United Kingdom",
+                            "United States",
+                            "Brazil",
+                            "India",
+                        ]
+                        if all(
+                            p in paises
+                            for p in [
+                                "Spain",
+                                "Italy",
+                                "Germany",
+                                "France",
+                                "United Kingdom",
+                                "United States",
+                                "Brazil",
+                                "India",
+                            ]
+                        )
+                        else paises[:8],
+                        multiple=True,
+                    ),
+                ),
+            ),
+            output_widget("chart_ridgeline"),
             class_="chart-section",
-            id="mapa"
+            id="ridgeline",
         ),
-        
-        # Gráfico 3: Salud
+        # Gráfico 3: Dumbbell Plot
         ui.div(
             ui.div(
                 ui.span("03", class_="section-number"),
                 ui.div(
-                    ui.div("Gasto en Salud vs Letalidad", class_="section-title"),
-                    ui.div("Relación entre inversión sanitaria y tasa de letalidad", class_="section-subtitle"),
+                    ui.div(
+                        "Dumbbell Plot: Crecimiento de Incidencia",
+                        class_="section-title",
+                    ),
+                    ui.div(
+                        "Incremento neto de la incidencia entre el inicio y el final del período estudiado",
+                        class_="section-subtitle",
+                    ),
                 ),
-                class_="section-header"
+                class_="section-header",
             ),
-            output_widget("chart_salud"),
+            output_widget("chart_dumbbell"),
             class_="chart-section",
-            id="salud"
+            id="dumbbell",
         ),
-        
-        # Gráfico 4: Top países
+        # Gráfico 4: Heatmap Calendar
         ui.div(
             ui.div(
                 ui.span("04", class_="section-number"),
                 ui.div(
-                    ui.div("Top 15 Países más Afectados", class_="section-title"),
-                    ui.div("Ranking por número total de casos confirmados", class_="section-subtitle"),
+                    ui.div("Calendario de Intensidad", class_="section-title"),
+                    ui.div(
+                        "Detección de patrones temporales cíclicos y anomalías en los datos de mortalidad",
+                        class_="section-subtitle",
+                    ),
                 ),
-                class_="section-header"
+                class_="section-header",
             ),
-            output_widget("chart_top"),
+            output_widget("chart_heatmap_calendar"),
             class_="chart-section",
-            id="ranking"
+            id="heatmap",
         ),
-        
-        # Gráfico 5: PIB
+        # Gráfico 5: Multivariable Quadrant Scatter (Efficiency Matrix)
         ui.div(
             ui.div(
                 ui.span("05", class_="section-number"),
                 ui.div(
-                    ui.div("PIB per Cápita vs Incidencia", class_="section-title"),
-                    ui.div("Correlación entre desarrollo económico e impacto del COVID-19", class_="section-subtitle"),
+                    ui.div("Matriz de Eficiencia Sanitaria", class_="section-title"),
+                    ui.div(
+                        "Análisis coste-efectividad de los sistemas de salud - Incidencia vs Letalidad con inversión sanitaria",
+                        class_="section-subtitle",
+                    ),
                 ),
-                class_="section-header"
+                class_="section-header",
             ),
-            output_widget("chart_pib"),
+            output_widget("chart_efficiency"),
             class_="chart-section",
-            id="pib"
+            id="efficiency",
         ),
-        
-        # Gráfico 6: Casos diarios
+        # Gráfico 6: Global Choropleth Map
         ui.div(
             ui.div(
                 ui.span("06", class_="section-number"),
                 ui.div(
-                    ui.div("Casos Diarios", class_="section-title"),
-                    ui.div("Evolución de nuevos casos por día", class_="section-subtitle"),
+                    ui.div("Mapa Coroplético Global", class_="section-title"),
+                    ui.div(
+                        "Distribución global de la pandemia - Intensidad de color según severidad del impacto",
+                        class_="section-subtitle",
+                    ),
                 ),
-                class_="section-header"
+                class_="section-header",
             ),
-            output_widget("chart_diarios"),
+            output_widget("chart_mapa"),
             class_="chart-section",
-            id="diarios"
+            id="mapa",
         ),
-        
         # Footer
-        ui.HTML('<div class="footer">Dashboard COVID-19 2025 | Datos: WHO & World Bank | Shiny for Python + Plotly</div>'),
-        
+        ui.HTML(
+            '<div class="footer">Dashboard COVID-19 2025 | Datos: WHO & World Bank | Shiny for Python + Plotly</div>'
+        ),
         class_="container-fluid px-4 dashboard-section",
-        id="dashboard"
-    )
+        id="dashboard",
+    ),
 )
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SERVER
 # ═══════════════════════════════════════════════════════════════════════════════
 def server(input, output, session):
-    
     def fmt(n):
-        if n >= 1e9: return f"{n/1e9:.2f}B"
-        if n >= 1e6: return f"{n/1e6:.2f}M"
-        if n >= 1e3: return f"{n/1e3:.1f}K"
+        if n >= 1e9:
+            return f"{n / 1e9:.2f}B"
+        if n >= 1e6:
+            return f"{n / 1e6:.2f}M"
+        if n >= 1e3:
+            return f"{n / 1e3:.1f}K"
         return f"{n:,.0f}"
-    
+
     @reactive.calc
     def datos_filtrados():
         data = df.copy()
         if input.pais() and input.pais() != "Todos":
-            data = data[data['pais'] == input.pais()]
+            data = data[data["pais"] == input.pais()]
         if input.fecha_inicio() and input.fecha_fin():
-            data = data[(data['fecha'] >= pd.to_datetime(input.fecha_inicio())) & 
-                       (data['fecha'] <= pd.to_datetime(input.fecha_fin()))]
+            data = data[
+                (data["fecha"] >= pd.to_datetime(input.fecha_inicio()))
+                & (data["fecha"] <= pd.to_datetime(input.fecha_fin()))
+            ]
         return data
-    
+
     @reactive.calc
     def datos_ultimo():
         data = datos_filtrados()
         if len(data) == 0:
             return df_ultimo
-        return data.loc[data.groupby('pais')['fecha'].idxmax()]
-    
+        return data.loc[data.groupby("pais")["fecha"].idxmax()]
+
     # KPIs en el Hero (pequeños)
     @output
     @render.ui
     def hero_kpis():
         data = datos_ultimo()
-        total_casos = int(data['confirmados'].sum())
-        total_muertes = int(data['muertes'].sum())
-        n_paises = data['pais'].nunique()
-        avg_letalidad = data['letalidad_CFR_pct'].mean()
-        
-        return ui.HTML(f'''
+        total_casos = int(data["confirmados"].sum())
+        total_muertes = int(data["muertes"].sum())
+        n_paises = data["pais"].nunique()
+        avg_letalidad = data["letalidad_CFR_pct"].mean()
+
+        return ui.HTML(f"""
         <div class="hero-kpis">
             <div class="hero-kpi">
                 <div class="hero-kpi-value">{fmt(total_casos)}</div>
@@ -445,19 +741,19 @@ def server(input, output, session):
                 <div class="hero-kpi-label">Letalidad</div>
             </div>
         </div>
-        ''')
-    
+        """)
+
     # KPIs grandes en el Dashboard con animación
     @output
     @render.ui
     def dashboard_kpis():
         data = datos_ultimo()
-        total_casos = int(data['confirmados'].sum())
-        total_muertes = int(data['muertes'].sum())
-        n_paises = data['pais'].nunique()
-        avg_letalidad = data['letalidad_CFR_pct'].mean()
-        
-        return ui.HTML(f'''
+        total_casos = int(data["confirmados"].sum())
+        total_muertes = int(data["muertes"].sum())
+        n_paises = data["pais"].nunique()
+        avg_letalidad = data["letalidad_CFR_pct"].mean()
+
+        return ui.HTML(f"""
         <div class="dashboard-kpis">
             <div class="dashboard-kpi">
                 <div class="dashboard-kpi-icon casos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><path d="m4.93 4.93 2.83 2.83m8.48 8.48 2.83 2.83m0-14.14-2.83 2.83m-8.48 8.48-2.83 2.83"/></svg></div>
@@ -484,189 +780,892 @@ def server(input, output, session):
                 <div class="dashboard-kpi-change"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Promedio CFR</div>
             </div>
         </div>
-        ''')
-    
+        """)
+
     @render_widget
-    def chart_temporal():
-        data = datos_filtrados()
-        
-        if input.pais() and input.pais() != "Todos":
-            # País específico - agrupar por mes
-            data = data.copy()
-            data['mes'] = data['fecha'].dt.to_period('M').astype(str)
-            data_mes = data.groupby('mes').agg({'confirmados': 'max', 'muertes': 'max'}).reset_index()
-            fig = px.bar(data_mes, x='mes', y='confirmados',
-                        labels={'mes': 'Mes', 'confirmados': 'Casos Confirmados'},
-                        color_discrete_sequence=['#6366f1'])
-            fig.update_traces(hovertemplate='<b>%{x}</b><br>Casos: %{y:,.0f}<extra></extra>')
-        else:
-            # Vista global - agrupar por mes todos los países top
-            data = data.copy()
-            data['mes'] = data['fecha'].dt.to_period('M').astype(str)
-            data_mes = data.groupby('mes').agg({'confirmados': 'sum', 'muertes': 'sum'}).reset_index()
-            fig = px.area(data_mes, x='mes', y='confirmados',
-                         labels={'mes': 'Mes', 'confirmados': 'Casos Acumulados'},
-                         color_discrete_sequence=['#6366f1'])
-            fig.update_traces(fill='tozeroy', hovertemplate='<b>%{x}</b><br>Casos: %{y:,.0f}<extra></extra>')
-        
-        fig.update_layout(
-            height=420, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='rgba(255,255,255,0.8)'),
-            xaxis=dict(gridcolor='rgba(255,255,255,0.1)', tickangle=-45),
-            yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-            legend=dict(orientation="h", y=1.02, bgcolor='rgba(0,0,0,0)'),
-            margin=dict(l=50, r=20, t=30, b=80)
-        )
-        return fig
-    
-    @render_widget
-    def chart_mapa():
-        data = datos_ultimo().copy()
-        
-        fig = px.choropleth(
-            data, locations='iso3c', color='IA_100k', hover_name='pais',
-            color_continuous_scale=['#1e1b4b', '#3730a3', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe'],
-            labels={'IA_100k': 'Incidencia/100k'}
-        )
-        fig.update_geos(
-            showframe=False, showcoastlines=True, coastlinecolor='rgba(99,102,241,0.4)',
-            projection_type='natural earth', bgcolor='rgba(0,0,0,0)',
-            landcolor='rgba(25,25,50,0.9)', oceancolor='rgba(8,8,20,1)',
-            showland=True, showcountries=True, countrycolor='rgba(99,102,241,0.2)',
-            lataxis_range=[-60, 90]
-        )
-        fig.update_layout(
-            height=600, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='rgba(255,255,255,0.8)'), margin=dict(l=0, r=0, t=10, b=0),
-            coloraxis_colorbar=dict(
-                title='Incidencia/100k',
-                thickness=15,
-                len=0.6,
-                bgcolor='rgba(20,20,50,0.8)',
-                bordercolor='rgba(99,102,241,0.3)',
-                tickfont=dict(color='rgba(255,255,255,0.7)')
-            )
-        )
-        return fig
-    
-    @render_widget
-    def chart_salud():
-        data = datos_ultimo()
-        data = data[data['gasto_salud_pib'] > 0].copy()
-        
-        fig = px.scatter(
-            data, x='gasto_salud_pib', y='letalidad_CFR_pct', size='poblacion',
-            color='pib_per_capita_2019', hover_name='pais',
-            color_continuous_scale=['#10b981', '#fbbf24', '#ef4444'],
-            labels={'gasto_salud_pib': 'Gasto en Salud (% PIB)', 'letalidad_CFR_pct': 'Letalidad (%)', 'pib_per_capita_2019': 'PIB/cápita'},
-            custom_data=['confirmados', 'muertes', 'poblacion']
-        )
-        fig.update_traces(
-            hovertemplate='<b>%{hovertext}</b><br><br>Gasto Salud: %{x:.1f}% PIB<br>Letalidad: %{y:.2f}%<br>PIB/cápita: $%{marker.color:,.0f}<br>Casos: %{customdata[0]:,.0f}<br>Muertes: %{customdata[1]:,.0f}<extra></extra>'
-        )
-        fig.update_layout(
-            height=450, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='rgba(255,255,255,0.8)'),
-            xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-            yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-            margin=dict(l=60, r=20, t=30, b=50)
-        )
-        return fig
-    
-    @render_widget
-    def chart_top():
-        data = datos_ultimo().nlargest(15, 'confirmados').copy()
-        data = data.sort_values('confirmados', ascending=True)
-        
-        # Crear textos personalizados para el hover
-        hover_texts = []
-        for _, row in data.iterrows():
-            hover_texts.append(
-                f"<b>{row['pais']}</b><br><br>"
-                f"● Casos: {row['confirmados']:,.0f}<br>"
-                f"● Muertes: {row['muertes']:,.0f}<br>"
-                f"● Incidencia: {row['IA_100k']:,.1f}/100k<br>"
-                f"● Letalidad: {row['letalidad_CFR_pct']:.2f}%<br>"
-                f"● Población: {row['poblacion']:,.0f}"
-            )
-        
-        fig = go.Figure(go.Bar(
-            y=data['pais'], x=data['confirmados'], orientation='h',
-            marker=dict(
-                color=data['confirmados'], 
-                colorscale=[[0, '#4f46e5'], [0.3, '#7c3aed'], [0.6, '#a855f7'], [1, '#ec4899']],
-                line=dict(width=1, color='rgba(255,255,255,0.2)')
-            ),
-            hovertext=hover_texts,
-            hoverinfo='text',
-            hoverlabel=dict(
-                bgcolor='rgba(20,20,50,0.95)',
-                bordercolor='rgba(99,102,241,0.5)',
-                font=dict(size=12, color='white')
-            )
-        ))
-        fig.update_layout(
-            height=550, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='rgba(255,255,255,0.8)'),
-            yaxis=dict(gridcolor='rgba(255,255,255,0.05)', tickfont=dict(size=11)),
-            xaxis=dict(gridcolor='rgba(255,255,255,0.1)', title='Casos Confirmados'),
-            margin=dict(l=120, r=20, t=20, b=50),
-            bargap=0.15
-        )
-        return fig
-    
-    @render_widget
-    def chart_pib():
-        data = datos_ultimo()
-        data = data[data['pib_per_capita_2019'] > 0].copy()
-        
-        fig = px.scatter(
-            data, x='pib_per_capita_2019', y='IA_100k', size='poblacion',
-            color='letalidad_CFR_pct', hover_name='pais',
-            color_continuous_scale=['#10b981', '#fbbf24', '#ef4444'],
-            labels={'pib_per_capita_2019': 'PIB per Cápita ($)', 'IA_100k': 'Incidencia/100k', 'letalidad_CFR_pct': 'Letalidad %'},
-            custom_data=['confirmados', 'muertes', 'gasto_salud_pib']
-        )
-        fig.update_traces(
-            hovertemplate='<b>%{hovertext}</b><br><br>PIB/cápita: $%{x:,.0f}<br>Incidencia: %{y:,.1f}/100k<br>Letalidad: %{marker.color:.2f}%<br>Casos: %{customdata[0]:,.0f}<br>Muertes: %{customdata[1]:,.0f}<br>Gasto Salud: %{customdata[2]:.1f}% PIB<extra></extra>'
-        )
-        fig.update_layout(
-            height=450, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='rgba(255,255,255,0.8)'),
-            xaxis=dict(gridcolor='rgba(255,255,255,0.1)', type='log', title='PIB per Cápita ($) - Escala Log'),
-            yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-            margin=dict(l=60, r=20, t=30, b=50)
-        )
-        return fig
-    
-    @render_widget
-    def chart_diarios():
+    def chart_motion():
+        """
+        Motion Chart (Animated Bubble Chart) - Data Storytelling
+
+        Objetivo: Visualizar la correlación entre la riqueza de un país (PIB per cápita)
+        y el impacto de la mortalidad del virus a lo largo del tiempo.
+
+        Esta visualización permite observar si los países con mayores recursos económicos
+        lograron aplanar la curva de mortalidad antes que otros.
+        """
         data = datos_filtrados().copy()
-        
-        if input.pais() and input.pais() != "Todos":
-            # País específico - por mes
-            data['mes'] = data['fecha'].dt.to_period('M').astype(str)
-            data_mes = data.groupby('mes').agg({'confirmados_dia': 'sum', 'muertes_dia': 'sum'}).reset_index()
-            fig = px.bar(data_mes, x='mes', y='confirmados_dia',
-                        labels={'mes': 'Mes', 'confirmados_dia': 'Casos Diarios'},
-                        color_discrete_sequence=['#a855f7'])
-            fig.update_traces(hovertemplate='<b>%{x}</b><br>Nuevos casos: %{y:,.0f}<extra></extra>')
-        else:
-            # Global por mes
-            data['mes'] = data['fecha'].dt.to_period('M').astype(str)
-            data_mes = data.groupby('mes').agg({'confirmados_dia': 'sum'}).reset_index()
-            fig = px.area(data_mes, x='mes', y='confirmados_dia',
-                         labels={'mes': 'Mes', 'confirmados_dia': 'Casos Diarios'},
-                         color_discrete_sequence=['#a855f7'])
-            fig.update_traces(fill='tozeroy', hovertemplate='<b>%{x}</b><br>Nuevos casos: %{y:,.0f}<extra></extra>')
-        
+
+        # Filtrar datos válidos
+        data = data[
+            (data["pib_per_capita_2019"] > 0)
+            & (data["tasa_mortalidad_100k"] >= 0)
+            & (data["poblacion"] > 0)
+        ].copy()
+
+        # Crear columna de mes para la animación
+        data["mes"] = data["fecha"].dt.to_period("M").astype(str)
+        data["mes_nombre"] = data["fecha"].dt.strftime("%B %Y")
+
+        # Agregar datos por mes y país (tomar el máximo del mes)
+        data_mensual = (
+            data.groupby(["pais", "iso3c", "continente", "mes", "mes_nombre"])
+            .agg(
+                {
+                    "pib_per_capita_2019": "first",
+                    "tasa_mortalidad_100k": "max",  # Tasa acumulada al final del mes
+                    "poblacion": "first",
+                    "confirmados": "max",
+                    "muertes": "max",
+                    "letalidad_CFR_pct": "last",
+                }
+            )
+            .reset_index()
+        )
+
+        # Convertir tasa por millón a tasa por 100k
+        # La columna ya está en tasa por 100k, no necesita división
+        data_mensual["mortalidad_100k"] = data_mensual["tasa_mortalidad_100k"]
+
+        # Ordenar por mes
+        data_mensual = data_mensual.sort_values("mes")
+        meses_ordenados = data_mensual["mes"].unique().tolist()
+
+        # Calcular tamaño de burbujas (normalizado)
+        max_pop = data_mensual["poblacion"].max()
+        data_mensual["size"] = (data_mensual["poblacion"] / max_pop * 50) + 5
+
+        # Obtener lista de continentes únicos
+        continentes = sorted(data_mensual["continente"].unique().tolist())
+
+        # Crear frames para la animación usando plotly.graph_objects
+        frames = []
+        for mes in meses_ordenados:
+            frame_data = data_mensual[data_mensual["mes"] == mes]
+            mes_nombre = (
+                frame_data["mes_nombre"].iloc[0] if len(frame_data) > 0 else mes
+            )
+
+            traces = []
+            for continente in continentes:
+                cont_data = frame_data[frame_data["continente"] == continente]
+                if len(cont_data) == 0:
+                    continue
+
+                trace = go.Scatter(
+                    x=cont_data["pib_per_capita_2019"],
+                    y=cont_data["mortalidad_100k"],
+                    mode="markers",
+                    marker=dict(
+                        size=cont_data["size"],
+                        color=CONTINENT_COLORS.get(continente, "#64748b"),
+                        opacity=0.7,
+                        line=dict(width=1, color="rgba(255,255,255,0.3)"),
+                        sizemode="diameter",
+                    ),
+                    name=continente,
+                    text=cont_data["pais"],
+                    customdata=cont_data[
+                        ["confirmados", "muertes", "poblacion", "letalidad_CFR_pct"]
+                    ].values,
+                    hovertemplate=(
+                        "<b>%{text}</b><br><br>"
+                        "PIB per cápita: $%{x:,.0f}<br>"
+                        "Mortalidad: %{y:.1f}/100k<br>"
+                        "Casos: %{customdata[0]:,.0f}<br>"
+                        "Muertes: %{customdata[1]:,.0f}<br>"
+                        "Población: %{customdata[2]:,.0f}<br>"
+                        "Letalidad: %{customdata[3]:.2f}%"
+                        "<extra></extra>"
+                    ),
+                )
+                traces.append(trace)
+
+            frames.append(
+                go.Frame(
+                    data=traces,
+                    name=mes,
+                    layout=go.Layout(
+                        title=dict(
+                            text=f"<b>Evolución COVID-19:</b> {mes_nombre}",
+                            font=dict(size=16, color="rgba(255,255,255,0.9)"),
+                        )
+                    ),
+                )
+            )
+
+        # Crear figura inicial con el primer mes
+        primer_mes = meses_ordenados[0] if meses_ordenados else None
+        initial_data = (
+            data_mensual[data_mensual["mes"] == primer_mes]
+            if primer_mes
+            else data_mensual.head(0)
+        )
+
+        fig = go.Figure()
+
+        # Agregar traces iniciales por continente
+        for continente in continentes:
+            cont_data = initial_data[initial_data["continente"] == continente]
+            if len(cont_data) == 0:
+                # Agregar trace vacío para mantener la leyenda
+                fig.add_trace(
+                    go.Scatter(
+                        x=[None],
+                        y=[None],
+                        mode="markers",
+                        marker=dict(
+                            size=10,
+                            color=CONTINENT_COLORS.get(continente, "#64748b"),
+                        ),
+                        name=continente,
+                        showlegend=True,
+                    )
+                )
+            else:
+                fig.add_trace(
+                    go.Scatter(
+                        x=cont_data["pib_per_capita_2019"],
+                        y=cont_data["mortalidad_100k"],
+                        mode="markers",
+                        marker=dict(
+                            size=cont_data["size"],
+                            color=CONTINENT_COLORS.get(continente, "#64748b"),
+                            opacity=0.7,
+                            line=dict(width=1, color="rgba(255,255,255,0.3)"),
+                            sizemode="diameter",
+                        ),
+                        name=continente,
+                        text=cont_data["pais"],
+                        customdata=cont_data[
+                            ["confirmados", "muertes", "poblacion", "letalidad_CFR_pct"]
+                        ].values,
+                        hovertemplate=(
+                            "<b>%{text}</b><br><br>"
+                            "PIB per cápita: $%{x:,.0f}<br>"
+                            "Mortalidad: %{y:.1f}/100k<br>"
+                            "Casos: %{customdata[0]:,.0f}<br>"
+                            "Muertes: %{customdata[1]:,.0f}<br>"
+                            "Población: %{customdata[2]:,.0f}<br>"
+                            "Letalidad: %{customdata[3]:.2f}%"
+                            "<extra></extra>"
+                        ),
+                    )
+                )
+
+        # Agregar frames
+        fig.frames = frames
+
+        # Crear slider steps
+        slider_steps = []
+        for mes in meses_ordenados:
+            mes_display = mes.split("-")[1] if "-" in mes else mes  # Mostrar solo mes
+            slider_steps.append(
+                dict(
+                    args=[
+                        [mes],
+                        dict(
+                            frame=dict(duration=500, redraw=True),
+                            mode="immediate",
+                            transition=dict(duration=300, easing="cubic-in-out"),
+                        ),
+                    ],
+                    label=mes_display,
+                    method="animate",
+                )
+            )
+
+        # Configurar layout con animación
         fig.update_layout(
-            height=400, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='rgba(255,255,255,0.8)'),
-            xaxis=dict(gridcolor='rgba(255,255,255,0.1)', tickangle=-45),
-            yaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-            margin=dict(l=60, r=20, t=30, b=80)
+            height=550,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="rgba(255,255,255,0.8)"),
+            title=dict(
+                text="<b>Evolución COVID-19:</b> Enero 2020",
+                font=dict(size=16, color="rgba(255,255,255,0.9)"),
+                x=0.02,
+                y=0.98,
+            ),
+            xaxis=dict(
+                title="PIB per Cápita ($) - Escala Logarítmica",
+                type="log",
+                gridcolor="rgba(255,255,255,0.1)",
+                showline=True,
+                linecolor="rgba(99,102,241,0.3)",
+                range=[2.5, 5.3],  # Log scale: ~300 a ~200,000
+            ),
+            yaxis=dict(
+                title="Tasa de Mortalidad (por 100k habitantes)",
+                gridcolor="rgba(255,255,255,0.1)",
+                showline=True,
+                linecolor="rgba(99,102,241,0.3)",
+                range=[-5, 150],
+            ),
+            legend=dict(
+                title=dict(
+                    text="Continente", font=dict(size=12, color="rgba(255,255,255,0.8)")
+                ),
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="center",
+                x=0.5,
+                bgcolor="rgba(20,20,50,0.7)",
+                bordercolor="rgba(99,102,241,0.3)",
+                borderwidth=1,
+                font=dict(size=10),
+            ),
+            margin=dict(l=70, r=30, t=100, b=120),
+            # Botones de animación
+            updatemenus=[
+                dict(
+                    type="buttons",
+                    showactive=False,
+                    y=-0.15,
+                    x=0.1,
+                    xanchor="right",
+                    yanchor="top",
+                    pad=dict(t=0, r=10),
+                    buttons=[
+                        dict(
+                            label="▶ Play",
+                            method="animate",
+                            args=[
+                                None,
+                                dict(
+                                    frame=dict(duration=700, redraw=True),
+                                    fromcurrent=True,
+                                    transition=dict(
+                                        duration=400, easing="cubic-in-out"
+                                    ),
+                                ),
+                            ],
+                        ),
+                        dict(
+                            label="⏸ Pause",
+                            method="animate",
+                            args=[
+                                [None],
+                                dict(
+                                    frame=dict(duration=0, redraw=False),
+                                    mode="immediate",
+                                    transition=dict(duration=0),
+                                ),
+                            ],
+                        ),
+                    ],
+                    font=dict(color="#fff"),
+                    bgcolor="rgba(99,102,241,0.8)",
+                    bordercolor="rgba(99,102,241,0.5)",
+                )
+            ],
+            # Slider para control temporal
+            sliders=[
+                dict(
+                    active=0,
+                    yanchor="top",
+                    xanchor="left",
+                    currentvalue=dict(
+                        font=dict(size=14, color="rgba(255,255,255,0.8)"),
+                        prefix="Mes: ",
+                        visible=True,
+                        xanchor="right",
+                    ),
+                    transition=dict(duration=400, easing="cubic-in-out"),
+                    pad=dict(b=10, t=30),
+                    len=0.8,
+                    x=0.15,
+                    y=-0.05,
+                    steps=slider_steps,
+                    bgcolor="rgba(30,30,60,0.8)",
+                    activebgcolor="rgba(99,102,241,0.8)",
+                    bordercolor="rgba(99,102,241,0.3)",
+                    tickcolor="rgba(255,255,255,0.5)",
+                    font=dict(color="rgba(255,255,255,0.7)", size=9),
+                )
+            ],
+        )
+
+        return fig
+
+    @render_widget
+    def chart_ridgeline():
+        """
+        Ridgeline Plot ("The Waves")
+
+        Objetivo: Comparar olas de contagio entre diferentes países sin saturar
+        la vista con múltiples líneas superpuestas.
+
+        Aplica el principio Gestalt de Proximidad. Al apilar distribuciones
+        verticalmente, el cerebro puede comparar fácilmente cuándo empezaron
+        y terminaron los picos en cada país.
+        """
+        selected_countries = input.paises_ridgeline()
+        if not selected_countries or len(selected_countries) == 0:
+            selected_countries = paises[:5]
+
+        data = datos_filtrados()
+        data = data[data["pais"].isin(selected_countries)].copy()
+
+        if len(data) == 0:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No hay datos disponibles para los países seleccionados",
+                x=0.5,
+                y=0.5,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="rgba(255,255,255,0.6)"),
+            )
+            fig.update_layout(
+                height=500,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+            )
+            return fig
+
+        # Agrupar por semana para suavizar
+        data["semana"] = data["fecha"].dt.to_period("W").apply(lambda x: x.start_time)
+        data_semanal = (
+            data.groupby(["pais", "semana"])
+            .agg(
+                {
+                    "confirmados_dia": "sum",
+                    "IA_100k_dia": "sum" if "IA_100k_dia" in data.columns else "first",
+                }
+            )
+            .reset_index()
+        )
+
+        # Normalizar por país para comparabilidad
+        max_by_country = data_semanal.groupby("pais")["confirmados_dia"].transform(
+            "max"
+        )
+        data_semanal["confirmados_norm"] = data_semanal[
+            "confirmados_dia"
+        ] / max_by_country.replace(0, 1)
+
+        fig = go.Figure()
+
+        # Colores para cada país (usando continente si está disponible)
+        country_colors = px.colors.qualitative.Set2
+
+        countries = list(
+            reversed(selected_countries)
+        )  # Invertir para que el primero esté arriba
+        offset_step = 1.0
+
+        for i, country in enumerate(countries):
+            country_data = data_semanal[data_semanal["pais"] == country].sort_values(
+                "semana"
+            )
+            if len(country_data) == 0:
+                continue
+
+            offset = i * offset_step
+            color = country_colors[i % len(country_colors)]
+
+            # Crear área rellena
+            x_vals = country_data["semana"].tolist()
+            y_vals = (country_data["confirmados_norm"] + offset).tolist()
+            y_base = [offset] * len(x_vals)
+
+            # Línea base
+            fig.add_trace(
+                go.Scatter(
+                    x=x_vals + x_vals[::-1],
+                    y=y_vals + y_base[::-1],
+                    fill="toself",
+                    fillcolor=color.replace("rgb", "rgba").replace(")", ",0.4)")
+                    if "rgb" in color
+                    else color + "66",
+                    line=dict(color=color, width=1.5),
+                    name=country,
+                    hovertemplate=f"<b>{country}</b><br>Semana: %{{x|%Y-%m-%d}}<br>Casos semanales: %{{customdata:,.0f}}<extra></extra>",
+                    customdata=country_data["confirmados_dia"].tolist()
+                    + country_data["confirmados_dia"].tolist()[::-1],
+                )
+            )
+
+        fig.update_layout(
+            height=500,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="rgba(255,255,255,0.8)"),
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="center",
+                x=0.5,
+                bgcolor="rgba(20,20,50,0.7)",
+                bordercolor="rgba(99,102,241,0.3)",
+                borderwidth=1,
+            ),
+            xaxis=dict(
+                title="Tiempo",
+                gridcolor="rgba(255,255,255,0.1)",
+                showline=True,
+                linecolor="rgba(99,102,241,0.3)",
+            ),
+            yaxis=dict(
+                title="Intensidad de Casos (normalizado)",
+                gridcolor="rgba(255,255,255,0.05)",
+                showticklabels=False,
+            ),
+            margin=dict(l=60, r=30, t=50, b=60),
         )
         return fig
 
+    @render_widget
+    def chart_dumbbell():
+        """
+        Dumbbell Plot (DNA Chart)
+
+        Objetivo: Visualizar el incremento neto de incidencia entre el inicio
+        y el final del período estudiado.
+
+        Maximiza el Data-Ink Ratio. En lugar de usar dos barras por país
+        (que ocuparían espacio y tinta), usamos una línea fina conectando
+        dos puntos. La longitud de la línea representa la velocidad o magnitud
+        del crecimiento del problema en ese país.
+        """
+        data = datos_filtrados()
+
+        # Obtener datos del primer y último mes para cada país
+        data_inicio = data.loc[data.groupby("pais")["fecha"].idxmin()][
+            ["pais", "IA_100k", "fecha"]
+        ].copy()
+        data_inicio.columns = ["pais", "IA_100k_inicio", "fecha_inicio"]
+
+        data_fin = data.loc[data.groupby("pais")["fecha"].idxmax()][
+            ["pais", "IA_100k", "fecha"]
+        ].copy()
+        data_fin.columns = ["pais", "IA_100k_fin", "fecha_fin"]
+
+        data_dumbbell = data_inicio.merge(data_fin, on="pais")
+        data_dumbbell["incremento"] = (
+            data_dumbbell["IA_100k_fin"] - data_dumbbell["IA_100k_inicio"]
+        )
+
+        # Top 15 por incidencia final
+        data_dumbbell = data_dumbbell.nlargest(15, "IA_100k_fin")
+        data_dumbbell = data_dumbbell.sort_values("IA_100k_fin", ascending=True)
+
+        fig = go.Figure()
+
+        # Líneas conectoras
+        for _, row in data_dumbbell.iterrows():
+            fig.add_trace(
+                go.Scatter(
+                    x=[row["IA_100k_inicio"], row["IA_100k_fin"]],
+                    y=[row["pais"], row["pais"]],
+                    mode="lines",
+                    line=dict(color="rgba(148, 163, 184, 0.6)", width=2),
+                    showlegend=False,
+                    hoverinfo="skip",
+                )
+            )
+
+        # Puntos de inicio (verde - Enero)
+        fig.add_trace(
+            go.Scatter(
+                x=data_dumbbell["IA_100k_inicio"],
+                y=data_dumbbell["pais"],
+                mode="markers",
+                marker=dict(
+                    color="#10b981", size=12, line=dict(color="white", width=1)
+                ),
+                name="Inicio (Enero)",
+                hovertemplate="<b>%{y}</b><br>Incidencia Inicio: %{x:.1f}/100k<extra></extra>",
+            )
+        )
+
+        # Puntos de fin (rojo - Diciembre)
+        fig.add_trace(
+            go.Scatter(
+                x=data_dumbbell["IA_100k_fin"],
+                y=data_dumbbell["pais"],
+                mode="markers",
+                marker=dict(
+                    color="#ef4444", size=12, line=dict(color="white", width=1)
+                ),
+                name="Fin (Diciembre)",
+                hovertemplate="<b>%{y}</b><br>Incidencia Final: %{x:.1f}/100k<br>Incremento: +%{customdata:.1f}/100k<extra></extra>",
+                customdata=data_dumbbell["incremento"],
+            )
+        )
+
+        fig.update_layout(
+            height=550,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="rgba(255,255,255,0.8)"),
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="center",
+                x=0.5,
+                bgcolor="rgba(20,20,50,0.7)",
+                bordercolor="rgba(99,102,241,0.3)",
+                borderwidth=1,
+            ),
+            xaxis=dict(
+                title="Incidencia Acumulada (por 100k habitantes)",
+                gridcolor="rgba(255,255,255,0.1)",
+                showline=True,
+                linecolor="rgba(99,102,241,0.3)",
+            ),
+            yaxis=dict(
+                gridcolor="rgba(255,255,255,0.05)",
+                tickfont=dict(size=11),
+            ),
+            margin=dict(l=120, r=30, t=60, b=60),
+        )
+        return fig
+
+    @render_widget
+    def chart_heatmap_calendar():
+        """
+        Heatmap Calendar (Intensity Calendar)
+
+        Objetivo: Detectar patrones temporales cíclicos o anomalías en el
+        reporte de datos.
+
+        Permite identificar rápidamente "hotspots" temporales y problemas
+        con los datos (ej: si los fines de semana aparecen más claros por
+        falta de reporte administrativo). Es una visualización intuitiva
+        para audiencias no expertas.
+        """
+        data = datos_filtrados()
+
+        # Si hay un país seleccionado, usar ese; sino agregar globalmente
+        if input.pais() and input.pais() != "Todos":
+            data = data[data["pais"] == input.pais()].copy()
+        else:
+            # Agregar muertes diarias globalmente
+            data = data.groupby("fecha").agg({"muertes_dia": "sum"}).reset_index()
+
+        # Extraer información temporal
+        data["semana"] = data["fecha"].dt.isocalendar().week
+        data["dia_semana"] = data["fecha"].dt.dayofweek  # 0=Lunes, 6=Domingo
+        data["mes"] = data["fecha"].dt.month
+
+        # Crear nombre del día
+        dias_semana = [
+            "Lunes",
+            "Martes",
+            "Miércoles",
+            "Jueves",
+            "Viernes",
+            "Sábado",
+            "Domingo",
+        ]
+        data["dia_nombre"] = data["dia_semana"].map(lambda x: dias_semana[x])
+
+        # Agregar por semana y día de la semana
+        heatmap_data = (
+            data.groupby(["semana", "dia_semana", "dia_nombre"])
+            .agg({"muertes_dia": "sum"})
+            .reset_index()
+        )
+
+        # Crear matriz para el heatmap
+        pivot = heatmap_data.pivot(
+            index="dia_semana", columns="semana", values="muertes_dia"
+        ).fillna(0)
+
+        # Ordenar días (Lunes arriba, Domingo abajo)
+        pivot = pivot.sort_index()
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=pivot.values,
+                x=[f"S{int(w)}" for w in pivot.columns],
+                y=dias_semana,
+                colorscale=[
+                    [0, "rgba(30,30,60,0.8)"],
+                    [0.2, "#7f1d1d"],
+                    [0.4, "#b91c1c"],
+                    [0.6, "#dc2626"],
+                    [0.8, "#ef4444"],
+                    [1, "#fca5a5"],
+                ],
+                hovertemplate="Semana %{x}<br>%{y}<br>Muertes: %{z:,.0f}<extra></extra>",
+                colorbar=dict(
+                    title="Muertes",
+                    thickness=15,
+                    len=0.8,
+                    bgcolor="rgba(20,20,50,0.8)",
+                    bordercolor="rgba(99,102,241,0.3)",
+                    tickfont=dict(color="rgba(255,255,255,0.7)"),
+                ),
+            )
+        )
+
+        fig.update_layout(
+            height=350,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="rgba(255,255,255,0.8)"),
+            xaxis=dict(
+                title="Semana del Año",
+                side="bottom",
+                tickfont=dict(size=9),
+            ),
+            yaxis=dict(
+                title="Día de la Semana",
+                autorange="reversed",  # Lunes arriba
+            ),
+            margin=dict(l=100, r=30, t=30, b=60),
+        )
+        return fig
+
+    @render_widget
+    def chart_efficiency():
+        """
+        Multivariable Quadrant Scatter (Sanitary Efficiency Matrix)
+
+        Objetivo: Analizar la relación coste-efectividad de los sistemas de
+        salud, verificando si una mayor inversión pública (% PIB) realmente
+        se tradujo en menor letalidad durante la pandemia.
+
+        Aplica el principio de maximizar la densidad de información sin
+        aumentar el ruido (Chart Junk). Pasamos de un gráfico bivariado a
+        uno de 4 dimensiones (X, Y, Color, Tamaño) en un solo plano.
+
+        Los cuadrantes actúan como herramienta de clustering manual,
+        permitiendo etiquetar rápidamente el desempeño de cada país.
+        """
+        data = datos_ultimo()
+        data = data[(data["gasto_salud_pib"] > 0) & (data["IA_100k"] > 0)].copy()
+
+        if len(data) == 0:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No hay datos disponibles",
+                x=0.5,
+                y=0.5,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="rgba(255,255,255,0.6)"),
+            )
+            fig.update_layout(
+                height=550,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+            )
+            return fig
+
+        # Calcular medianas para las líneas de cuadrante
+        median_incidencia = data["IA_100k"].median()
+        median_letalidad = data["letalidad_CFR_pct"].median()
+
+        # Normalizar tamaño de burbujas
+        max_pop = data["poblacion"].max()
+        data["size"] = (data["poblacion"] / max_pop * 40) + 5
+
+        fig = go.Figure()
+
+        # Scatter principal
+        fig.add_trace(
+            go.Scatter(
+                x=data["IA_100k"],
+                y=data["letalidad_CFR_pct"],
+                mode="markers",
+                marker=dict(
+                    size=data["size"],
+                    color=data["gasto_salud_pib"],
+                    colorscale="Viridis",
+                    opacity=0.7,
+                    line=dict(width=1, color="rgba(255,255,255,0.3)"),
+                    colorbar=dict(
+                        title="Gasto Salud<br>(% PIB)",
+                        thickness=15,
+                        len=0.6,
+                        bgcolor="rgba(20,20,50,0.8)",
+                        bordercolor="rgba(99,102,241,0.3)",
+                        tickfont=dict(color="rgba(255,255,255,0.7)"),
+                    ),
+                    sizemode="diameter",
+                ),
+                text=data["pais"],
+                customdata=data[
+                    [
+                        "confirmados",
+                        "muertes",
+                        "poblacion",
+                        "gasto_salud_pib",
+                        "pib_per_capita_2019",
+                    ]
+                ].values,
+                hovertemplate=(
+                    "<b>%{text}</b><br><br>"
+                    "Incidencia: %{x:.1f}/100k<br>"
+                    "Letalidad: %{y:.2f}%<br>"
+                    "Gasto Salud: %{customdata[3]:.1f}% PIB<br>"
+                    "PIB/cápita: $%{customdata[4]:,.0f}<br>"
+                    "Población: %{customdata[2]:,.0f}<br>"
+                    "Casos: %{customdata[0]:,.0f}<br>"
+                    "Muertes: %{customdata[1]:,.0f}"
+                    "<extra></extra>"
+                ),
+                showlegend=False,
+            )
+        )
+
+        # Líneas de cuadrante (medianas)
+        fig.add_hline(
+            y=median_letalidad,
+            line=dict(color="rgba(255,255,255,0.4)", width=1, dash="dash"),
+            annotation_text=f"Letalidad media: {median_letalidad:.2f}%",
+            annotation_position="top right",
+            annotation_font=dict(size=10, color="rgba(255,255,255,0.6)"),
+        )
+        fig.add_vline(
+            x=median_incidencia,
+            line=dict(color="rgba(255,255,255,0.4)", width=1, dash="dash"),
+            annotation_text=f"Incidencia media: {median_incidencia:.0f}",
+            annotation_position="top right",
+            annotation_font=dict(size=10, color="rgba(255,255,255,0.6)"),
+        )
+
+        # Etiquetas de cuadrantes
+        annotations = [
+            dict(
+                x=median_incidencia * 0.3,
+                y=median_letalidad * 0.5,
+                text="<b>EFICIENTE</b><br>Baja incidencia<br>Baja letalidad",
+                showarrow=False,
+                font=dict(size=10, color="#10b981"),
+                bgcolor="rgba(16, 185, 129, 0.1)",
+            ),
+            dict(
+                x=median_incidencia * 1.8,
+                y=median_letalidad * 0.5,
+                text="<b>DESBORDADO</b><br>Alta incidencia<br>Baja letalidad",
+                showarrow=False,
+                font=dict(size=10, color="#f59e0b"),
+                bgcolor="rgba(245, 158, 11, 0.1)",
+            ),
+            dict(
+                x=median_incidencia * 0.3,
+                y=median_letalidad * 1.8,
+                text="<b>CRÍTICO</b><br>Baja incidencia<br>Alta letalidad",
+                showarrow=False,
+                font=dict(size=10, color="#f59e0b"),
+                bgcolor="rgba(245, 158, 11, 0.1)",
+            ),
+            dict(
+                x=median_incidencia * 1.8,
+                y=median_letalidad * 1.8,
+                text="<b>COLAPSO</b><br>Alta incidencia<br>Alta letalidad",
+                showarrow=False,
+                font=dict(size=10, color="#ef4444"),
+                bgcolor="rgba(239, 68, 68, 0.1)",
+            ),
+        ]
+
+        fig.update_layout(
+            height=550,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="rgba(255,255,255,0.8)"),
+            xaxis=dict(
+                title="Incidencia Acumulada (por 100k habitantes)",
+                gridcolor="rgba(255,255,255,0.1)",
+                showline=True,
+                linecolor="rgba(99,102,241,0.3)",
+                type="log",
+            ),
+            yaxis=dict(
+                title="Tasa de Letalidad (%)",
+                gridcolor="rgba(255,255,255,0.1)",
+                showline=True,
+                linecolor="rgba(99,102,241,0.3)",
+            ),
+            margin=dict(l=70, r=30, t=40, b=60),
+            annotations=annotations,
+        )
+        return fig
+
+    @render_widget
+    def chart_mapa():
+        """
+        Global Choropleth Map
+
+        Objetivo: Visualizar la distribución global de la pandemia usando
+        intensidad de color para representar la severidad del impacto en
+        cada región.
+
+        Usa saturación de color para permitir la identificación inmediata
+        de "hotspots" y clusters geográficos. A diferencia del mapa de
+        burbujas, esta visualización llena todo el territorio de cada país,
+        facilitando el reconocimiento de patrones regionales a escala global.
+        """
+        data = datos_ultimo().copy()
+
+        fig = px.choropleth(
+            data,
+            locations="iso3c",
+            color="IA_100k",
+            hover_name="pais",
+            color_continuous_scale="Viridis",
+            labels={"IA_100k": "Incidencia/100k"},
+            custom_data=["confirmados", "muertes", "letalidad_CFR_pct", "poblacion"],
+        )
+
+        fig.update_traces(
+            hovertemplate=(
+                "<b>%{hovertext}</b><br><br>"
+                "Incidencia: %{z:.1f}/100k<br>"
+                "Casos: %{customdata[0]:,.0f}<br>"
+                "Muertes: %{customdata[1]:,.0f}<br>"
+                "Letalidad: %{customdata[2]:.2f}%<br>"
+                "Población: %{customdata[3]:,.0f}"
+                "<extra></extra>"
+            )
+        )
+
+        fig.update_geos(
+            showframe=False,
+            showcoastlines=True,
+            coastlinecolor="rgba(99,102,241,0.4)",
+            projection_type="natural earth",
+            bgcolor="rgba(0,0,0,0)",
+            landcolor="rgba(25,25,50,0.9)",
+            oceancolor="rgba(8,8,20,1)",
+            showland=True,
+            showcountries=True,
+            countrycolor="rgba(99,102,241,0.2)",
+            lataxis_range=[-60, 90],
+        )
+        fig.update_layout(
+            height=600,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="rgba(255,255,255,0.8)"),
+            margin=dict(l=0, r=0, t=10, b=0),
+            coloraxis_colorbar=dict(
+                title="Incidencia/100k",
+                thickness=15,
+                len=0.6,
+                bgcolor="rgba(20,20,50,0.8)",
+                bordercolor="rgba(99,102,241,0.3)",
+                tickfont=dict(color="rgba(255,255,255,0.7)"),
+            ),
+        )
+        return fig
+
+
 app = App(app_ui, server)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
