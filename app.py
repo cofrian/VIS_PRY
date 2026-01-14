@@ -543,6 +543,45 @@ app_ui = ui.page_fluid(
                 ),
                 class_="section-header",
             ),
+            ui.row(
+                ui.column(
+                    12,
+                    ui.input_selectize(
+                        "paises_motion",
+                        "Seleccionar países para el Motion Chart:",
+                        choices=paises,
+                        selected=[
+                            "Spain",
+                            "Italy",
+                            "Germany",
+                            "France",
+                            "United Kingdom",
+                            "United States",
+                            "Brazil",
+                            "India",
+                            "China",
+                            "Japan",
+                        ]
+                        if all(
+                            p in paises
+                            for p in [
+                                "Spain",
+                                "Italy",
+                                "Germany",
+                                "France",
+                                "United Kingdom",
+                                "United States",
+                                "Brazil",
+                                "India",
+                                "China",
+                                "Japan",
+                            ]
+                        )
+                        else paises[:10],
+                        multiple=True,
+                    ),
+                ),
+            ),
             output_widget("chart_motion"),
             class_="chart-section",
             id="motion",
@@ -615,6 +654,18 @@ app_ui = ui.page_fluid(
                 ),
                 class_="section-header",
             ),
+            ui.row(
+                ui.column(
+                    12,
+                    ui.input_selectize(
+                        "paises_dumbbell",
+                        "Seleccionar países para comparar (máx. 15):",
+                        choices=paises,
+                        selected=[],
+                        multiple=True,
+                    ),
+                ),
+            ),
             output_widget("chart_dumbbell"),
             class_="chart-section",
             id="dumbbell",
@@ -648,6 +699,18 @@ app_ui = ui.page_fluid(
                     ),
                 ),
                 class_="section-header",
+            ),
+            ui.row(
+                ui.column(
+                    12,
+                    ui.input_selectize(
+                        "paises_efficiency",
+                        "Seleccionar países para la matriz (vacío = todos):",
+                        choices=paises,
+                        selected=[],
+                        multiple=True,
+                    ),
+                ),
             ),
             output_widget("chart_efficiency"),
             class_="chart-section",
@@ -793,7 +856,15 @@ def server(input, output, session):
         Esta visualización permite observar si los países con mayores recursos económicos
         lograron aplanar la curva de mortalidad antes que otros.
         """
+        # Obtener países seleccionados
+        selected_countries = input.paises_motion()
+        if not selected_countries or len(selected_countries) == 0:
+            selected_countries = paises[:10]  # Default: primeros 10 países
+
         data = datos_filtrados().copy()
+
+        # Filtrar por países seleccionados
+        data = data[data["pais"].isin(selected_countries)].copy()
 
         # Filtrar datos válidos
         data = data[
@@ -802,13 +873,31 @@ def server(input, output, session):
             & (data["poblacion"] > 0)
         ].copy()
 
+        if len(data) == 0:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No hay datos disponibles para los países seleccionados",
+                x=0.5,
+                y=0.5,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="rgba(255,255,255,0.6)"),
+            )
+            fig.update_layout(
+                height=550,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+            )
+            return fig
+
         # Crear columna de mes para la animación
         data["mes"] = data["fecha"].dt.to_period("M").astype(str)
         data["mes_nombre"] = data["fecha"].dt.strftime("%B %Y")
 
         # Agregar datos por mes y país (tomar el máximo del mes)
         data_mensual = (
-            data.groupby(["pais", "iso3c", "continente", "mes", "mes_nombre"])
+            data.groupby(["pais", "iso3c", "mes", "mes_nombre"])
             .agg(
                 {
                     "pib_per_capita_2019": "first",
@@ -822,8 +911,7 @@ def server(input, output, session):
             .reset_index()
         )
 
-        # Convertir tasa por millón a tasa por 100k
-        # La columna ya está en tasa por 100k, no necesita división
+        # La columna ya está en tasa por 100k
         data_mensual["mortalidad_100k"] = data_mensual["tasa_mortalidad_100k"]
 
         # Ordenar por mes
@@ -834,8 +922,17 @@ def server(input, output, session):
         max_pop = data_mensual["poblacion"].max()
         data_mensual["size"] = (data_mensual["poblacion"] / max_pop * 50) + 5
 
-        # Obtener lista de continentes únicos
-        continentes = sorted(data_mensual["continente"].unique().tolist())
+        # Obtener lista de países únicos y asignar colores
+        paises_unicos = sorted(data_mensual["pais"].unique().tolist())
+        country_colors = (
+            px.colors.qualitative.Set2
+            + px.colors.qualitative.Pastel1
+            + px.colors.qualitative.Dark2
+        )
+        color_map = {
+            pais: country_colors[i % len(country_colors)]
+            for i, pais in enumerate(paises_unicos)
+        }
 
         # Crear frames para la animación usando plotly.graph_objects
         frames = []
@@ -846,25 +943,25 @@ def server(input, output, session):
             )
 
             traces = []
-            for continente in continentes:
-                cont_data = frame_data[frame_data["continente"] == continente]
-                if len(cont_data) == 0:
+            for pais in paises_unicos:
+                pais_data = frame_data[frame_data["pais"] == pais]
+                if len(pais_data) == 0:
                     continue
 
                 trace = go.Scatter(
-                    x=cont_data["pib_per_capita_2019"],
-                    y=cont_data["mortalidad_100k"],
+                    x=pais_data["pib_per_capita_2019"],
+                    y=pais_data["mortalidad_100k"],
                     mode="markers",
                     marker=dict(
-                        size=cont_data["size"],
-                        color=CONTINENT_COLORS.get(continente, "#64748b"),
+                        size=pais_data["size"],
+                        color=color_map.get(pais, "#64748b"),
                         opacity=0.7,
                         line=dict(width=1, color="rgba(255,255,255,0.3)"),
                         sizemode="diameter",
                     ),
-                    name=continente,
-                    text=cont_data["pais"],
-                    customdata=cont_data[
+                    name=pais,
+                    text=pais_data["pais"],
+                    customdata=pais_data[
                         ["confirmados", "muertes", "poblacion", "letalidad_CFR_pct"]
                     ].values,
                     hovertemplate=(
@@ -903,10 +1000,10 @@ def server(input, output, session):
 
         fig = go.Figure()
 
-        # Agregar traces iniciales por continente
-        for continente in continentes:
-            cont_data = initial_data[initial_data["continente"] == continente]
-            if len(cont_data) == 0:
+        # Agregar traces iniciales por país
+        for pais in paises_unicos:
+            pais_data = initial_data[initial_data["pais"] == pais]
+            if len(pais_data) == 0:
                 # Agregar trace vacío para mantener la leyenda
                 fig.add_trace(
                     go.Scatter(
@@ -915,28 +1012,28 @@ def server(input, output, session):
                         mode="markers",
                         marker=dict(
                             size=10,
-                            color=CONTINENT_COLORS.get(continente, "#64748b"),
+                            color=color_map.get(pais, "#64748b"),
                         ),
-                        name=continente,
+                        name=pais,
                         showlegend=True,
                     )
                 )
             else:
                 fig.add_trace(
                     go.Scatter(
-                        x=cont_data["pib_per_capita_2019"],
-                        y=cont_data["mortalidad_100k"],
+                        x=pais_data["pib_per_capita_2019"],
+                        y=pais_data["mortalidad_100k"],
                         mode="markers",
                         marker=dict(
-                            size=cont_data["size"],
-                            color=CONTINENT_COLORS.get(continente, "#64748b"),
+                            size=pais_data["size"],
+                            color=color_map.get(pais, "#64748b"),
                             opacity=0.7,
                             line=dict(width=1, color="rgba(255,255,255,0.3)"),
                             sizemode="diameter",
                         ),
-                        name=continente,
-                        text=cont_data["pais"],
-                        customdata=cont_data[
+                        name=pais,
+                        text=pais_data["pais"],
+                        customdata=pais_data[
                             ["confirmados", "muertes", "poblacion", "letalidad_CFR_pct"]
                         ].values,
                         hovertemplate=(
@@ -1003,7 +1100,7 @@ def server(input, output, session):
             ),
             legend=dict(
                 title=dict(
-                    text="Continente", font=dict(size=12, color="rgba(255,255,255,0.8)")
+                    text="País", font=dict(size=12, color="rgba(255,255,255,0.8)")
                 ),
                 orientation="h",
                 yanchor="bottom",
@@ -1232,7 +1329,33 @@ def server(input, output, session):
         dos puntos. La longitud de la línea representa la velocidad o magnitud
         del crecimiento del problema en ese país.
         """
+        # Obtener países seleccionados
+        selected_countries = input.paises_dumbbell()
+        if not selected_countries or len(selected_countries) == 0:
+            selected_countries = paises[:15]  # Default: primeros 15 países
+
         data = datos_filtrados()
+
+        # Filtrar por países seleccionados
+        data = data[data["pais"].isin(selected_countries)].copy()
+
+        if len(data) == 0:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No hay datos disponibles para los países seleccionados",
+                x=0.5,
+                y=0.5,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(size=16, color="rgba(255,255,255,0.6)"),
+            )
+            fig.update_layout(
+                height=550,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+            )
+            return fig
 
         # Obtener datos del primer y último mes para cada país
         data_inicio = data.loc[data.groupby("pais")["fecha"].idxmin()][
@@ -1250,8 +1373,7 @@ def server(input, output, session):
             data_dumbbell["IA_100k_fin"] - data_dumbbell["IA_100k_inicio"]
         )
 
-        # Top 15 por incidencia final
-        data_dumbbell = data_dumbbell.nlargest(15, "IA_100k_fin")
+        # Ordenar por incidencia final
         data_dumbbell = data_dumbbell.sort_values("IA_100k_fin", ascending=True)
 
         fig = go.Figure()
@@ -1441,13 +1563,20 @@ def server(input, output, session):
         Los cuadrantes actúan como herramienta de clustering manual,
         permitiendo etiquetar rápidamente el desempeño de cada país.
         """
+        # Obtener países seleccionados
+        selected_countries = input.paises_efficiency()
+
         data = datos_ultimo()
         data = data[(data["gasto_salud_pib"] > 0) & (data["IA_100k"] > 0)].copy()
+
+        # Filtrar por países seleccionados si hay selección
+        if selected_countries and len(selected_countries) > 0:
+            data = data[data["pais"].isin(selected_countries)].copy()
 
         if len(data) == 0:
             fig = go.Figure()
             fig.add_annotation(
-                text="No hay datos disponibles",
+                text="No hay datos disponibles para los países seleccionados",
                 x=0.5,
                 y=0.5,
                 xref="paper",
