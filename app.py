@@ -1,3 +1,6 @@
+import html
+from pathlib import Path
+
 from shiny import App, ui, render, reactive
 from shinywidgets import output_widget, render_widget
 import pandas as pd
@@ -7,7 +10,9 @@ import plotly.graph_objects as go
 # ═══════════════════════════════════════════════════════════════════════════════
 # CARGA DE DATOS
 # ═══════════════════════════════════════════════════════════════════════════════
-df = pd.read_csv("panel_2020_paises_sin_nan_R_clean.csv")
+DATA_PATH = Path(__file__).parent / "panel_2020_paises_sin_nan_R_clean.csv"
+
+df = pd.read_csv(DATA_PATH)
 df["fecha"] = pd.to_datetime(df["fecha"])
 
 # Mapeo de países a continentes para el Motion Chart
@@ -446,11 +451,11 @@ app_ui = ui.page_fluid(
                     </div>
                     <h1 class="hero-title">
                         COVID-19<br>
-                        <span class="hero-title-accent">Panel de Análisis 2025</span>
+                        <span class="hero-title-accent">Panel de Análisis 2020</span>
                     </h1>
                     <p class="hero-description">
-                        Análisis integral del impacto del COVID-19 correlacionado con indicadores 
-                        económicos y de salud. Explora la evolución temporal y compara datos de más de 190 países.
+                        Análisis integral del impacto del COVID-19 correlacionado con indicadores
+                        económicos y de salud. Explora la evolución temporal y compara datos de 189 países.
                     </p>
                 </div>
                 <div class="hero-visual">
@@ -582,7 +587,9 @@ app_ui = ui.page_fluid(
                     ),
                 ),
             ),
-            output_widget("chart_motion"),
+            # Se renderiza como HTML de Plotly, no como widget: FigureWidget
+            # descarta los frames y la animación no llegaría a funcionar.
+            ui.output_ui("chart_motion"),
             class_="chart-section",
             id="motion",
         ),
@@ -735,7 +742,7 @@ app_ui = ui.page_fluid(
         ),
         # Footer
         ui.HTML(
-            '<div class="footer">Dashboard COVID-19 2025 | Datos: WHO & World Bank | Shiny for Python + Plotly</div>'
+            '<div class="footer">Dashboard COVID-19 2020 | Datos: WHO & World Bank | Shiny for Python + Plotly</div>'
         ),
         class_="container-fluid px-4 dashboard-section",
         id="dashboard",
@@ -755,6 +762,36 @@ def server(input, output, session):
         if n >= 1e3:
             return f"{n / 1e3:.1f}K"
         return f"{n:,.0f}"
+
+    def fig_animada_html(fig, height=620):
+        """
+        Renderiza una figura con frames dentro de un iframe aislado.
+
+        Dos motivos para no usar @render_widget aquí:
+
+        1. FigureWidget no admite frames, así que una figura animada servida
+           como widget pierde la animación: el Play y el slider se dibujan,
+           pero las burbujas nunca se mueven.
+        2. El HTML de to_html() inyectado con ui.HTML() tampoco basta: los
+           <script> que llegan por innerHTML no se ejecutan, y el gráfico se
+           queda en blanco.
+
+        El iframe con srcdoc ejecuta sus propios scripts y además aísla a
+        plotly.js del RequireJS que carga shinywidgets para los demás gráficos.
+        """
+        doc = fig.to_html(
+            full_html=True,
+            include_plotlyjs="cdn",
+            config={"displayModeBar": False, "responsive": True},
+        )
+        doc = doc.replace(
+            "<body>", '<body style="margin:0;background:transparent">', 1
+        )
+        return ui.HTML(
+            f'<iframe srcdoc="{html.escape(doc, quote=True)}" '
+            f'style="width:100%;height:{height}px;border:0;overflow:hidden" '
+            f'scrolling="no" loading="lazy"></iframe>'
+        )
 
     @reactive.calc
     def datos_filtrados():
@@ -845,7 +882,7 @@ def server(input, output, session):
         </div>
         """)
 
-    @render_widget
+    @render.ui
     def chart_motion():
         """
         Motion Chart (Animated Bubble Chart) - Data Storytelling
@@ -889,7 +926,7 @@ def server(input, output, session):
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
             )
-            return fig
+            return fig_animada_html(fig)
 
         # Crear columna de mes para la animación
         data["mes"] = data["fecha"].dt.to_period("M").astype(str)
@@ -1183,7 +1220,7 @@ def server(input, output, session):
             ],
         )
 
-        return fig
+        return fig_animada_html(fig)
 
     @render_widget
     def chart_ridgeline():

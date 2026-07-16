@@ -1,7 +1,22 @@
 [project]
-name = "vis-pry"
-version = "0.1.0"
-description = "Add your description here"
+name = "covid19-wealth-mortality"
+version = "1.0.0"
+description = "Dashboard interactivo que analiza si la riqueza nacional (PIB per cápita) y el gasto sanitario determinaron la mortalidad por COVID-19 en 189 países durante 2020."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "shiny==1.5.1",
+    "shinywidgets==0.7.0",
+    # plotly 5.x a propósito: con 6.x los FigureWidget no se inicializan en el
+    # navegador y todos los gráficos quedan en blanco. Ver requirements.txt.
+    "plotly==5.24.1",
+    "ipywidgets==8.1.8",
+    "pandas==2.3.3",
+    "numpy==2.4.1",
+    "uvicorn==0.40.0",
+    "starlette==0.51.0",
+    "python-dateutil==2.9.0.post0",
+]
+
+[project.urls]
+Repository = "https://github.com/cofrian/covid19-wealth-mortality"

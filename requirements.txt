@@ -1,9 +1,16 @@
 # Dashboard COVID-19 - Dependencias principales
 shiny==1.5.1
 shinywidgets==0.7.0
-plotly==6.5.1
 pandas==2.3.3
 numpy==2.4.1
+
+# Visualización
+# Plotly se fija en la serie 5.x de forma intencionada: con plotly 6.x el
+# FigureWidget que usa shinywidgets 0.7.0 no llega a inicializarse en el
+# navegador ("[anywidget] Failed to initialize model") y los gráficos se
+# quedan en blanco sin lanzar ningún error en el servidor.
+plotly==5.24.1
+ipywidgets==8.1.8
 
 # Servidor web
 uvicorn==0.40.0
