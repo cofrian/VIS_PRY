@@ -2,6 +2,11 @@
 
 **An interactive dashboard testing whether national wealth protected countries from COVID-19 mortality in 2020.**
 
+> **Coursework project** for **Visualización (VIS)** — BSc in Data Science.
+> Built as a team of three; see [Academic context](#academic-context).
+
+[![Course](https://img.shields.io/badge/Course-Visualizaci%C3%B3n_(VIS)-6366f1)](#academic-context)
+[![Degree](https://img.shields.io/badge/Degree-BSc_Data_Science-a855f7)](#academic-context)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Shiny](https://img.shields.io/badge/Shiny_for_Python-1.5-447099)](https://shiny.posit.co/py/)
 [![Plotly](https://img.shields.io/badge/Plotly-5.24-3F4F75?logo=plotly&logoColor=white)](https://plotly.com/python/)
@@ -147,9 +152,11 @@ The project follows its own visual identity guide ([`docs/colors.md`](docs/color
 
 ---
 
-## Team
+## Academic context
 
-Academic data-visualization project built by:
+This is a **coursework project for Visualización (VIS)**, a course in the **BSc in Data Science**. The assignment was to take a real multivariate dataset and build an interactive dashboard where every visualization is justified by visualization theory rather than chosen for looks — which is why each chart in the table above comes with an explicit rationale (data-ink ratio, Gestalt principles, DIKW hierarchy, colorblind-safe encoding) and why [`docs/technical_specifications.md`](docs/technical_specifications.md) and [`docs/colors.md`](docs/colors.md) exist as design documents rather than afterthoughts.
+
+Built as a team of three:
 
 - **Fernando Martínez Gómez** — [@fmargom](https://github.com/fmargom)
 - **Luis Trigueros Espada** — [@luistrge](https://github.com/luistrge)
